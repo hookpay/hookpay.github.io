@@ -5,9 +5,9 @@
   <subtitle>A Notebook by Julie</subtitle>
   <link href="/atom.xml" rel="self"/>
   
-  <link href="http://yoursite.com/"/>
+  <link href="https://juliecodestack.github.io/"/>
   <updated>2020-04-19T02:30:42.838Z</updated>
-  <id>http://yoursite.com/</id>
+  <id>https://juliecodestack.github.io/</id>
   
   <author>
     <name>宁萌</name>
@@ -18,8 +18,8 @@
   
   <entry>
     <title>Python编程之API入门：二 Python3中使用新浪微博API</title>
-    <link href="http://yoursite.com/2020/04/18/Python%E7%BC%96%E7%A8%8B%E4%B9%8BAPI%E5%85%A5%E9%97%A8%EF%BC%9A%E4%BA%8C-Python3%E4%B8%AD%E4%BD%BF%E7%94%A8%E6%96%B0%E6%B5%AA%E5%BE%AE%E5%8D%9AAPI/"/>
-    <id>http://yoursite.com/2020/04/18/Python%E7%BC%96%E7%A8%8B%E4%B9%8BAPI%E5%85%A5%E9%97%A8%EF%BC%9A%E4%BA%8C-Python3%E4%B8%AD%E4%BD%BF%E7%94%A8%E6%96%B0%E6%B5%AA%E5%BE%AE%E5%8D%9AAPI/</id>
+    <link href="https://juliecodestack.github.io/2020/04/18/Python%E7%BC%96%E7%A8%8B%E4%B9%8BAPI%E5%85%A5%E9%97%A8%EF%BC%9A%E4%BA%8C-Python3%E4%B8%AD%E4%BD%BF%E7%94%A8%E6%96%B0%E6%B5%AA%E5%BE%AE%E5%8D%9AAPI/"/>
+    <id>https://juliecodestack.github.io/2020/04/18/Python%E7%BC%96%E7%A8%8B%E4%B9%8BAPI%E5%85%A5%E9%97%A8%EF%BC%9A%E4%BA%8C-Python3%E4%B8%AD%E4%BD%BF%E7%94%A8%E6%96%B0%E6%B5%AA%E5%BE%AE%E5%8D%9AAPI/</id>
     <published>2020-04-18T02:22:38.000Z</published>
     <updated>2020-04-19T02:30:42.838Z</updated>
     
@@ -33,14 +33,14 @@
     
     
     
-      <category term="Python" scheme="http://yoursite.com/tags/Python/"/>
+      <category term="Python" scheme="https://juliecodestack.github.io/tags/Python/"/>
     
   </entry>
   
   <entry>
     <title>Python编程之API入门：一 使用百度地图API查地理坐标</title>
-    <link href="http://yoursite.com/2020/04/18/Python%E7%BC%96%E7%A8%8B%E4%B9%8BAPI%E5%85%A5%E9%97%A8%EF%BC%9A%E4%B8%80-%E4%BD%BF%E7%94%A8%E7%99%BE%E5%BA%A6%E5%9C%B0%E5%9B%BEAPI%E6%9F%A5%E5%9C%B0%E7%90%86%E5%9D%90%E6%A0%87/"/>
-    <id>http://yoursite.com/2020/04/18/Python%E7%BC%96%E7%A8%8B%E4%B9%8BAPI%E5%85%A5%E9%97%A8%EF%BC%9A%E4%B8%80-%E4%BD%BF%E7%94%A8%E7%99%BE%E5%BA%A6%E5%9C%B0%E5%9B%BEAPI%E6%9F%A5%E5%9C%B0%E7%90%86%E5%9D%90%E6%A0%87/</id>
+    <link href="https://juliecodestack.github.io/2020/04/18/Python%E7%BC%96%E7%A8%8B%E4%B9%8BAPI%E5%85%A5%E9%97%A8%EF%BC%9A%E4%B8%80-%E4%BD%BF%E7%94%A8%E7%99%BE%E5%BA%A6%E5%9C%B0%E5%9B%BEAPI%E6%9F%A5%E5%9C%B0%E7%90%86%E5%9D%90%E6%A0%87/"/>
+    <id>https://juliecodestack.github.io/2020/04/18/Python%E7%BC%96%E7%A8%8B%E4%B9%8BAPI%E5%85%A5%E9%97%A8%EF%BC%9A%E4%B8%80-%E4%BD%BF%E7%94%A8%E7%99%BE%E5%BA%A6%E5%9C%B0%E5%9B%BEAPI%E6%9F%A5%E5%9C%B0%E7%90%86%E5%9D%90%E6%A0%87/</id>
     <published>2020-04-18T02:17:29.000Z</published>
     <updated>2020-04-19T02:30:24.284Z</updated>
     
@@ -54,14 +54,14 @@
     
     
     
-      <category term="Python, API" scheme="http://yoursite.com/tags/Python-API/"/>
+      <category term="Python, API" scheme="https://juliecodestack.github.io/tags/Python-API/"/>
     
   </entry>
   
   <entry>
     <title>写作前的思考：Why How</title>
-    <link href="http://yoursite.com/2020/04/18/%E5%86%99%E4%BD%9C%E5%89%8D%E7%9A%84%E6%80%9D%E8%80%83%EF%BC%9AWhy-How/"/>
-    <id>http://yoursite.com/2020/04/18/%E5%86%99%E4%BD%9C%E5%89%8D%E7%9A%84%E6%80%9D%E8%80%83%EF%BC%9AWhy-How/</id>
+    <link href="https://juliecodestack.github.io/2020/04/18/%E5%86%99%E4%BD%9C%E5%89%8D%E7%9A%84%E6%80%9D%E8%80%83%EF%BC%9AWhy-How/"/>
+    <id>https://juliecodestack.github.io/2020/04/18/%E5%86%99%E4%BD%9C%E5%89%8D%E7%9A%84%E6%80%9D%E8%80%83%EF%BC%9AWhy-How/</id>
     <published>2020-04-18T00:55:58.000Z</published>
     <updated>2020-04-19T02:29:49.669Z</updated>
     
@@ -76,7 +76,7 @@
     
     
     
-      <category term="随笔" scheme="http://yoursite.com/tags/%E9%9A%8F%E7%AC%94/"/>
+      <category term="随笔" scheme="https://juliecodestack.github.io/tags/%E9%9A%8F%E7%AC%94/"/>
     
   </entry>
   
