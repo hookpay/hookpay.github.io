@@ -1,6 +1,47 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
+    <title>Python编程之API入门：一 使用百度地图API查地理坐标</title>
+    <url>/2020/04/18/Python%E7%BC%96%E7%A8%8B%E4%B9%8BAPI%E5%85%A5%E9%97%A8%EF%BC%9A%E4%B8%80-%E4%BD%BF%E7%94%A8%E7%99%BE%E5%BA%A6%E5%9C%B0%E5%9B%BEAPI%E6%9F%A5%E5%9C%B0%E7%90%86%E5%9D%90%E6%A0%87/</url>
+    <content><![CDATA[<p>在网络编程中，我们会和API打交道。那么，什么是API?如何使用API呢？本文分享了一下笔者对API的理解以及百度地图API的使用。</p>
+<a id="more"></a>
+<p>API是”Application Programming Interface（应用程序编程接口）”的缩写。如果那一大堆的术语和定义让你头晕，不妨试着这样理解：网络服务商（比如百度、微博等）存有大量数据，我们可以查询数据，但是需要按照一定的格式/协议，否则服务商不知道我们的需求无法进行处理，我们拿到数据也看不懂。通过API接口规范，通信双方都能明白对方传送的信息和数据，同时也简化了操作（只要按照规定的格式输入，就可以得到已知格式的输出，我们无需了解具体实现的技术细节，是不是很省心呢？）</p>
+<p>下面以<a href="http://lbsyun.baidu.com/index.php?title=webapi" target="_blank" rel="noopener">百度地图Web服务API</a>的调用为例。</p>
+<img src="/2020/04/18/Python%E7%BC%96%E7%A8%8B%E4%B9%8BAPI%E5%85%A5%E9%97%A8%EF%BC%9A%E4%B8%80-%E4%BD%BF%E7%94%A8%E7%99%BE%E5%BA%A6%E5%9C%B0%E5%9B%BEAPI%E6%9F%A5%E5%9C%B0%E7%90%86%E5%9D%90%E6%A0%87/02%E7%99%BE%E5%BA%A6%E5%9C%B0%E5%9B%BEAPI%E5%B9%B3%E5%8F%B0.png" class title="百度地图API平台示意图"> 
+
+<p>要使用的是图中所示“正/逆地理编码服务”。在使用服务前，需要登录百度账号（如果没有就注册一个），申请成为百度开发者，然后创建一个你自己的应用，就可以收到一个对应的服务密钥(AK)。在服务配置页面，有两种校验方式，一种是IP白名单方式，一种是sn校验方式。我根据文章<a href="https://www.cnblogs.com/liao-sir/p/8367683.html" target="_blank" rel="noopener"><br>python实现百度地图API获取某地址的经纬度</a>中的介绍，选择了sn校验方式，这样页面上会有SK。请将AK和SK两个序列码保存好，这就是你个人的验证信息。下一步使用百度地图API时要用到。</p>
+<p>要编写的这个Python小程序实现的功能是：<strong>输入某个地址，得到相应的经纬度坐标信息</strong>。分三步实现：</p>
+<ol>
+<li>生成url（用于提交到API进行查询）</li>
+<li>与API交互，查询并返回数据（json格式） </li>
+<li>利用json解析并输出。</li>
+</ol>
+<p>下面分别介绍具体实现。</p>
+<h3 id="1-sn码及url的生成"><a href="#1-sn码及url的生成" class="headerlink" title="1. sn码及url的生成"></a>1. sn码及url的生成</h3><p>url= <a href="http://api.map.baidu.com/geocoder/v2/?address=“输入的地点名”&amp;output=json&amp;ak=&#39;你的AK码&#39;&amp;sn=&#39;你的sn码&#39;。" target="_blank" rel="noopener">http://api.map.baidu.com/geocoder/v2/?address=“输入的地点名”&amp;output=json&amp;ak=&#39;你的AK码&#39;&amp;sn=&#39;你的sn码&#39;。</a><br>需要注意的是：</p>
+<ul>
+<li>由于url中有中文字符串，需要使用函数<code>urllib.parse.quote(inputstr, safe=&quot;/:=&amp;?#+!$,;&#39;@()*[]&quot;)</code>转换一下编码。</li>
+<li>在url里output可以选择输出为json格式或xml格式，默认是xml格式。</li>
+</ul>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">import</span> urllib.request,urllib.parse,urllib.error</span><br><span class="line"><span class="keyword">import</span> json</span><br><span class="line"><span class="keyword">import</span> hashlib</span><br><span class="line"></span><br><span class="line">MyAK=<span class="string">'这里请填入你的AK'</span></span><br><span class="line">MySK=<span class="string">'这里请填入你的SK'</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">while</span> <span class="literal">True</span>:</span><br><span class="line">    address = input(<span class="string">'输入地点：'</span>)</span><br><span class="line">    <span class="keyword">if</span> len(address)&lt;<span class="number">1</span>:</span><br><span class="line">        <span class="keyword">break</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">#产生sn码</span></span><br><span class="line">    queryStr=<span class="string">"/geocoder/v2/?address="</span>+address+<span class="string">'&amp;output=json&amp;ak='</span>+MyAK</span><br><span class="line">    encodedStr=urllib.parse.quote(queryStr, safe=<span class="string">"/:=&amp;?#+!$,;'@()*[]"</span>)</span><br><span class="line">    rawStr=encodedStr+MySK</span><br><span class="line">    sn=(hashlib.md5(urllib.parse.quote_plus(rawStr).encode(<span class="string">"utf8"</span>)).hexdigest())</span><br><span class="line"></span><br><span class="line">    <span class="comment">#生成url  </span></span><br><span class="line">    url=urllib.parse.quote(<span class="string">"http://api.map.baidu.com"</span>+queryStr+<span class="string">"&amp;sn="</span>+sn,safe=<span class="string">"/:=&amp;?#+!$,;'@()*[]"</span>)</span><br><span class="line">    print(<span class="string">'Retrieving'</span>,url)</span><br></pre></td></tr></table></figure>
+
+<h3 id="2-输入url，利用urllib从API读取数据"><a href="#2-输入url，利用urllib从API读取数据" class="headerlink" title="2. 输入url，利用urllib从API读取数据"></a>2. 输入url，利用urllib从API读取数据</h3><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment">#从API读取数据</span></span><br><span class="line">uh=urllib.request.urlopen(url)</span><br><span class="line">data=uh.read().decode()</span><br><span class="line">print(<span class="string">'Retrieved'</span>,len(data),<span class="string">'characters'</span>)</span><br></pre></td></tr></table></figure>
+<h3 id="3-利用json对返回数据进行解析。"><a href="#3-利用json对返回数据进行解析。" class="headerlink" title="3. 利用json对返回数据进行解析。"></a>3. 利用json对返回数据进行解析。</h3><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment">#解析数据</span></span><br><span class="line">    <span class="keyword">try</span>:</span><br><span class="line">        js=json.loads(data)</span><br><span class="line">    <span class="keyword">except</span>:</span><br><span class="line">        js=<span class="literal">None</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> <span class="keyword">not</span> js <span class="keyword">or</span> <span class="string">'status'</span><span class="keyword">not</span> <span class="keyword">in</span> js <span class="keyword">or</span> js[<span class="string">'status'</span>]!=<span class="number">0</span>:</span><br><span class="line">        print(<span class="string">'======Failure===='</span>)</span><br><span class="line">        print(data)</span><br><span class="line">        <span class="keyword">continue</span></span><br><span class="line">    print(json.dumps(js,indent=<span class="number">4</span>,ensure_ascii=<span class="literal">False</span>))</span><br></pre></td></tr></table></figure>
+<p>以上代码可输出得到json格式的数据。例如，输入“百度大厦”后，程序输出的json格式数据如下所示：</p>
+<figure class="highlight json"><table><tr><td class="code"><pre><span class="line">&#123;</span><br><span class="line">    <span class="attr">"status"</span>: <span class="number">0</span>,</span><br><span class="line">    <span class="attr">"result"</span>: &#123;</span><br><span class="line">        <span class="attr">"location"</span>: &#123;</span><br><span class="line">            <span class="attr">"lng"</span>: <span class="number">116.30695597357376</span>,</span><br><span class="line">            <span class="attr">"lat"</span>: <span class="number">40.05738753357608</span></span><br><span class="line">        &#125;,</span><br><span class="line">        <span class="attr">"precise"</span>: <span class="number">1</span>,</span><br><span class="line">        <span class="attr">"confidence"</span>: <span class="number">80</span>,</span><br><span class="line">        <span class="attr">"comprehension"</span>: <span class="number">100</span>,</span><br><span class="line">        <span class="attr">"level"</span>: <span class="string">"商务大厦"</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>需要注意的是，在这里一开始中文字符<code>&quot;商务大厦&quot;</code>不能正确显示，我从文章<a href="https://www.cnblogs.com/mingjiatang/p/9527345.html" target="_blank" rel="noopener">python中文编码&amp;json中文输出问题</a>中找到了答案，在<code>json.dumps()</code>函数中，默认转换为 ASCII 编码，中文字符就无法转换显示，因此在<code>json.dumps()</code>中要设置<code>ensure_ascii=False</code>。</p>
+<p>最后，通过以下代码，可提取经纬度坐标等信息。</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment">#获取经纬度坐标和地址类型</span></span><br><span class="line">lat=js[<span class="string">"result"</span>][<span class="string">"location"</span>][<span class="string">"lat"</span>]</span><br><span class="line">lng=js[<span class="string">"result"</span>][<span class="string">"location"</span>][<span class="string">"lng"</span>]</span><br><span class="line">print(<span class="string">'纬度'</span>,lat,<span class="string">'经度'</span>,lng)</span><br><span class="line">level=js[<span class="string">"result"</span>][<span class="string">"level"</span>]</span><br><span class="line">print(<span class="string">'地址类型'</span>,level)</span><br></pre></td></tr></table></figure>
+<p>总结：按照规范发送 url 以及对返回 json 或 xml 格式数据正确解析，另外注意中文字符的编码问题，就可以上手API。怎么样？你也快来试试吧！</p>
+]]></content>
+      <categories>
+        <category>编程</category>
+      </categories>
+      <tags>
+        <tag>Python</tag>
+        <tag>API</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>Python编程之API入门：二 Python3中使用新浪微博API</title>
     <url>/2020/04/18/Python%E7%BC%96%E7%A8%8B%E4%B9%8BAPI%E5%85%A5%E9%97%A8%EF%BC%9A%E4%BA%8C-Python3%E4%B8%AD%E4%BD%BF%E7%94%A8%E6%96%B0%E6%B5%AA%E5%BE%AE%E5%8D%9AAPI/</url>
     <content><![CDATA[<h4 id="回顾API使用流程"><a href="#回顾API使用流程" class="headerlink" title="回顾API使用流程"></a>回顾API使用流程</h4><p>在上一篇文章“Python编程之API入门：一 使用百度地图API查地理坐标”中，通过百度地图API的使用，我们看到API调用的一般流程为：生成API规定格式的url-&gt;通过urllib读取url中数据-&gt;对json格式的数据进行解析。下一步，让我们开始研究新浪微博API的使用吧！</p>
@@ -59,7 +100,10 @@
   <entry>
     <title>一本书中的人生滋味</title>
     <url>/2020/04/22/%E4%B8%80%E6%9C%AC%E4%B9%A6%E4%B8%AD%E7%9A%84%E4%BA%BA%E7%94%9F%E6%BB%8B%E5%91%B3/</url>
-    <content><![CDATA[<p><img src="https://img3.doubanio.com/view/subject/l/public/s4608452.jpg" alt="图书封面图片，来源：豆瓣"></p>
+    <content><![CDATA[<blockquote>
+<p>本文写于2019年11月。</p>
+</blockquote>
+<p><img src="https://img3.doubanio.com/view/subject/l/public/s4608452.jpg" alt="图书封面图片，来源：豆瓣"></p>
 <p>今天我想给大家推荐一本英文科幻小说 <strong>Flowers for Algernon（《献给阿尔吉侬的花束》）</strong>。</p>
 <a id="more"></a>
 <p>最早我是在一个科幻作品的指南资源帖中看到对这部作品的推荐和介绍，楼主介绍这本书时说，读完这本书，他静静地蒙在被子里哭了一场，这让我印象深刻。这是怎样的一部科幻作品呢？带着这样的疑问，我开始了阅读之旅。我先读了一点文字版，发现开篇就有很多错别字（卖个关子，原因稍后介绍），很不适应，感觉自己读到了盗版书，没有看下去。后来无意中在喜马拉雅听到了有声书版本，播讲者把错别字转换为迟缓语速和停顿的形式，我比较能接受。此外，朗读者的声音年轻，有大男孩的感觉，符合主人公 Charlie 的年龄特点。</p>
@@ -102,6 +146,30 @@
       </tags>
   </entry>
   <entry>
+    <title>不一样的马斯克</title>
+    <url>/2020/04/22/%E4%B8%8D%E4%B8%80%E6%A0%B7%E7%9A%84%E9%A9%AC%E6%96%AF%E5%85%8B/</url>
+    <content><![CDATA[<blockquote>
+<p>本文写于2019年6月。</p>
+</blockquote>
+<p>读 <strong>Elon Musk:Tesla, SpaceX, and the Quest for a Fantastic Future</strong> 这本传记之前，我听到的都是关于马斯克的传说，特斯拉、猎鹰系列火箭…能够同时涉足如此多的领域、管理几家公司，我想马斯克应该是个天才。</p>
+<p><img src="https://img9.doubanio.com/view/subject/l/public/s28351575.jpg" alt="图书封面图片，来源：豆瓣"></p>
+<a id="more"></a>
+<p>这本书改变了我的想法。读的过程中，我的脑子里时常冒出那段著名的“天将降大任于斯人也，必先苦其心志、劳其筋骨、…”。没有谁的成功是轻而易举的。世人看到的都是表面的风光，少有人看到他爬到山顶的途中遇到的坎坷、留下的汗水和泪水。然而，这也正是马斯克最打动我的，他的字典里没有“不”、“不可能”这样的字眼，他会分析如何去实现、有什么困难或问题，然后一一解决。他的所作所为或许有些疯狂，但这也是他超越现在之处，因为他着眼于未来。Google创始人Larry Page说， “Good ideas are always crazy until they’re not.” X.com（后来合并了，成为了现在的Paypal）的出现改变了人们的支付方式和习惯； Tesla（特斯拉）之后，新能源电动车如雨后春笋般出现，改变了人们对于汽车的认识和选择；或许SpaceX（太空探索技术公司）的火箭也会在若干年后改变我们的生活，火星、外太空将不再那么遥远…</p>
+<p>书中让我印象深刻的另一点，就是马斯克巧妙地将硅谷精简高效的工作方式引入到传统工业中（航天、汽车），产生了新的变革。比如设计研发人员的办公地点就”点缀”在工厂车间之中，让修改、测试十分快捷。从一个行业跨越到一个新的行业，专业知识不太精通可能是一个短板，但是同时也避免了固守陈规，比如马斯克就用了很多新的理念来设计和生产，这都是传统行业的从业者不想做或是不敢做的，但是马斯克的大胆创新和尝试取得了成效，也让他的跨领域成为优势。举个例子，坐车时我们可能会遇到一些不合适的地方，比如后排空间狭小等。很多人会说，以前就是这样设计，一直这样，没办法…马斯克不这么看，为什么不能改变？他和设计人员一起讨论想办法，特斯拉的SUV就采用了鹰翼式设计，方便家长安放儿童座椅。我到网上看了图片，确实很人性化。这也给我们启示，如何更好地进行跨领域、跨学科融合？</p>
+<p>让我格外高兴的一点就是马斯克也很喜欢读书，小时候就是个小书迷，到后面连百科全书都拿来啃。成立Space X他也读了很多专业书籍，但他还找到了一个快速学习的方法：向员工提专业问题。他招的都是高材生，他们一开始以为老板要检验一下自己的真才实学，于是滔滔不绝地详细讲解一通，后来发现，原来马斯克正在快速吸收知识呢! 终身学习、不断探知新的领域，这也是我们应该努力做到的。</p>
+<p>这本书让我认识了一个不一样的马斯克，也带给我很多关于创新、热情、乐观的思考，值得一读。</p>
+]]></content>
+      <categories>
+        <category>读书</category>
+      </categories>
+      <tags>
+        <tag>英文原著</tag>
+        <tag>非虚构</tag>
+        <tag>科技</tag>
+        <tag>人物传记</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>信息论之父香农</title>
     <url>/2020/04/22/%E4%BF%A1%E6%81%AF%E8%AE%BA%E4%B9%8B%E7%88%B6%E9%A6%99%E5%86%9C/</url>
     <content><![CDATA[<blockquote>
@@ -113,19 +181,19 @@
 <p>读完本书，我在深深佩服香农的才智之余，也对一些地方印象深刻，在这里与大家分享：</p>
 <h4 id="1-简化、抽象、类比。"><a href="#1-简化、抽象、类比。" class="headerlink" title="1. 简化、抽象、类比。"></a>1. 简化、抽象、类比。</h4><p>香农善于简化和抽象，这样就能发现看似不同的事物之间的相通之处；进而联系、类比，得到新的解决思路。比如，复杂的模拟开关电路、遗传学问题、布尔函数，看似不相干的三个领域，抛开那些表征，在简化后却是相似的。而让香农享誉全球的信息理论，也是香农对实际通信传输进行抽象、简化后推导得出，这样我们不用在意传输的是文字、语音、图片还是视频，不用在意传输环境的差异，不需要再用实验试错法来提高传输质量，而只用关注最重要的东西——信息量（用于衡量传输量的多少，香农定义了一个新的单位：比特）、信噪比（衡量传输中噪声干扰大小的指标），同时，这些指标也是在变化万端的传输应用场景中不变的可提取参数。</p>
 <h4 id="2-专才与通才。"><a href="#2-专才与通才。" class="headerlink" title="2. 专才与通才。"></a>2. 专才与通才。</h4><p>香农是幸运的，不只因为他有天才的头脑，还因为他遇到了慧眼识才的伯乐：他的导师布什(Vannevar Bush)，布什认为科学家不应固守在一个小领域，而应该扩大眼界，因此，他鼓励数学系硕士毕业的香农挑战新的领域——推荐他去遗传学实验室做博士研究。后来香农遇到的几个“贵人”：Warren Weaver, Thornton Fry 均持相似观点，即科学家应该拓展自己关注的领域，不能只专注自己所学。</p>
-<h4 id="3-为什么做科学研究？"><a href="#3-为什么做科学研究？" class="headerlink" title="3. 为什么做科学研究？"></a>3. 为什么做科学研究？</h4><p>因为好奇、想去知道事物背后的原因，也是因为好玩、有趣。知道这一点，就不难理解为什么香农会研究走迷宫的电动老鼠（机器学习的雏形）、抛接球的数学技巧等等。至于名利，他倒看得很淡。书中有一句很幽默的评论 <em>“Rarely has a thinker who devoted his life to the study of communication been so uncommunicative.”</em> 成名之后，他没有成为公众人物进行科普宣传等，依然在自己感兴趣的领域进行研究，也因此，世人对他知之甚少。</p>
+<h4 id="3-为什么做科学研究？"><a href="#3-为什么做科学研究？" class="headerlink" title="3. 为什么做科学研究？"></a>3. 为什么做科学研究？</h4><p>因为好奇、想去知道事物背后的原因，也是因为好玩、有趣。知道这一点，就不难理解为什么香农会研究走迷宫的电动老鼠（机器学习的雏形）、抛接球的数学技巧等等。至于名利，他倒看得很淡。书中有一句很幽默的评论 “Rarely has a thinker who devoted his life to the study of communication been so uncommunicative.” 成名之后，他没有成为公众人物进行科普宣传等，依然在自己感兴趣的领域进行研究，也因此，世人对他知之甚少。</p>
 <p>这本书的作者也提了一个引人深思的现象，在那个年代，科学家们都在积极探索、思考问题，甚至有的是看似没有什么用处的问题。对他们而言，开公司、做产品、赚钱并不是首要考虑的事情。现在的人们似乎认为科学研究就是代表一份稳定工作，人们做一项研究的出发点就是实用，反倒没有了以前人们发现的乐趣。</p>
-<h4 id="4-香农与人工智能"><a href="#4-香农与人工智能" class="headerlink" title="4. 香农与人工智能"></a>4. 香农与人工智能</h4><p>香农曾说过：*”I’m a machine and you’re a machine, and we both think, don’t we?”* 他认为机器是可以做到“像”人一样思考，所谓“像”，就是从行为学角度看，达到“思考”的效果。同时，他敏锐地提醒人们，不要依据人的思考方式去设计人工智能，而应该根据机器自身的优缺点（而不是人的思维特点）、取长补短以得到最佳效果。</p>
+<h4 id="4-香农与人工智能"><a href="#4-香农与人工智能" class="headerlink" title="4. 香农与人工智能"></a>4. 香农与人工智能</h4><p>香农曾说过：”I’m a machine and you’re a machine, and we both think, don’t we?” 他认为机器是可以做到“像”人一样思考，所谓“像”，就是从行为学角度看，达到“思考”的效果。同时，他敏锐地提醒人们，不要依据人的思考方式去设计人工智能，而应该根据机器自身的优缺点（而不是人的思维特点）、取长补短以得到最佳效果。</p>
 <p>谈到人工智能的未来，香农是一个乐天派，他认为人类造出比自己强大的物种很正常。他还半开玩笑地说，从信息熵的效用角度看，机器替代人类无可厚非。</p>
 <h4 id="5-通俗易懂"><a href="#5-通俗易懂" class="headerlink" title="5. 通俗易懂"></a>5. 通俗易懂</h4><p>书中讲述的理论对于大众来说似乎有点高深，但是并不用担心会看不懂，因为作者用了很多比喻、例子帮助读者理解。此外，文中还有不少排比句，文笔优美。举几个例子：</p>
 <blockquote>
-<p><em>Cryptography was the war’s white noise: it was ubiquitous, and yet only those paying the closest attention could pick it up.</em><br>将密码学比喻为白噪声，无处不在，但不易察觉，只有最仔细的人能发现。我觉得这个比喻很巧妙。</p>
+<p>Cryptography was the war’s white noise: it was ubiquitous, and yet only those paying the closest attention could pick it up.<br>将密码学比喻为白噪声，无处不在，但不易察觉，只有最仔细的人能发现。我觉得这个比喻很巧妙。</p>
 </blockquote>
 <blockquote>
-<p><em>Where Shannon was allergic to administrative work and bureaucracies of almost every kind, Weaver thrived in them.<br>Where Shannon considered teaching a nettlesome requirement of university employment, Weaver relished it.<br>And where Shannon could continue to pound away at a mathematical problem or research question until he struck sparks, pursuing problems with breathtaking intuition and instinct, Weaver had discovered that he possessed no such gift.</em><br>这里将Shannon和Weaver两个科学家（当时也是同事）对比，两人对于教职、行政工作、科研的态度形成鲜明对比，看出两人不同的爱好。</p>
+<p>Where Shannon was allergic to administrative work and bureaucracies of almost every kind, Weaver thrived in them.<br>Where Shannon considered teaching a nettlesome requirement of university employment, Weaver relished it.<br>And where Shannon could continue to pound away at a mathematical problem or research question until he struck sparks, pursuing problems with breathtaking intuition and instinct, Weaver had discovered that he possessed no such gift.<br>这里将Shannon和Weaver两个科学家（当时也是同事）对比，两人对于教职、行政工作、科研的态度形成鲜明对比，看出两人不同的爱好。</p>
 </blockquote>
 <blockquote>
-<p><em>All of this communication—faster, cheaper, more voluminous—rests on Shannon’s realization of our predictability. All of that predictability is fat to be cut; since Shannon, our signals have traveled light.</em><br>最后这个“travel light”用词实在妙，意为轻装前行。自从香农提出信息论之后，人们终于找到了有效传输的正确方法。</p>
+<p>All of this communication—faster, cheaper, more voluminous—rests on Shannon’s realization of our predictability. All of that predictability is fat to be cut; since Shannon, our signals have traveled light.<br>最后这个“travel light”用词实在妙，意为轻装前行。自从香农提出信息论之后，人们终于找到了有效传输的正确方法。</p>
 </blockquote>
 <p>以前我觉得香农公式、信息论枯燥抽象，读了这本书，我了解香农提出理论的来龙去脉，体会到其中的简洁之美，又对信息论产生了兴趣，这真是本书的奇妙之处。强烈推荐这本书。</p>
 ]]></content>
@@ -140,28 +208,14 @@
       </tags>
   </entry>
   <entry>
-    <title>写作前的思考：Why&amp;How</title>
-    <url>/2020/04/18/%E5%86%99%E4%BD%9C%E5%89%8D%E7%9A%84%E6%80%9D%E8%80%83%EF%BC%9AWhy&amp;How/</url>
-    <content><![CDATA[<p>经过一番努力，终于在github上建了这个博客小站。趁着现在仍然对写作抱有兴趣和热情，我记录下写作以及建立这个小站的初衷，以后动力不足时可以看一下充电。</p>
-<a id="more"></a>
-<img src="/2020/04/18/%E5%86%99%E4%BD%9C%E5%89%8D%E7%9A%84%E6%80%9D%E8%80%83%EF%BC%9AWhy&How/writing.jpg" class title="Photo by Andrew Neel from Pexels">
-<p>我最近在看fast.ai创始人Jeremy Howard老师的机器学习课程视频，其中他多次推荐博客写作。他认为，写技术博客可以很好地理解和运用知识。其中给我最大的启发就是技术博客的写作角度。在此之前，我一直认为，只有我对某个领域很懂，才可以写一些文章来帮助别人。其实不然。虽然我是新手小白，但是如果我弄懂了一个问题，就可以总结分享出来，帮助以后入门的小白。而且，新手小白反而更能理解新手容易遇到的困惑和问题。另外，这个博客可以作为学习笔记使用，整理知识点，方便自己日后查阅。而当别人遇到同样的问题需要解答时，也可发送博客文章给对方，高效地分享知识。</p>
-<p>平时我喜欢读书、语言学习、听轻音乐等。最近两三年我加大了英文原著阅读量，同时也对英文有声书兴趣正浓。因此，这个博客小站里也有一部分文章是写技术之外的兴趣爱好：书评、英语学习笔记、…。</p>
-<p>坚持写作，思考、表达，不断完善、不断提高。</p>
-]]></content>
-      <tags>
-        <tag>随笔</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>对肯福莱特世纪三部曲的讨论和思考</title>
     <url>/2020/04/22/%E5%AF%B9%E8%82%AF%E7%A6%8F%E8%8E%B1%E7%89%B9%E4%B8%96%E7%BA%AA%E4%B8%89%E9%83%A8%E6%9B%B2%E7%9A%84%E8%AE%A8%E8%AE%BA%E5%92%8C%E6%80%9D%E8%80%83/</url>
     <content><![CDATA[<blockquote>
 <p>本文写于2019年3月。</p>
 </blockquote>
 <p>经朋友推荐，我读了肯福莱特的世纪三部曲：<strong>Fall of Giants（《巨人的陨落》）、Winter of the World（《世界的凛冬》）和 Edge of Eternity（《永恒的边缘》）</strong>。这套书讲述了二十世纪在英国、德国、美国、俄国（苏联）的几个家族跨越一个世纪的故事，包括一战、二战和冷战。看到书商的广告，全球读者平均几天看完这套书，我疑惑这套书是否真正有宣传中的吸引力。打开了第一本后，我就停不下来，接着读完了后面两本，一直到最后结束，我也掩卷沉思，仿佛和书中人物一起回忆往昔。肯福莱特真的是一个讲故事高手，他把书中人物与重大历史事件结合，让读者在他们的故事中也看到了历史。</p>
-<a id="more"></a>
 <p><img src="https://img1.doubanio.com/view/subject/l/public/s4494549.jpg" alt="图书封面图片，来源：豆瓣"></p>
+<a id="more"></a>
 <p>当我在网上看对于这部作品的评论时，发现了不同的观点。一部分读者，比如像我这样的历史小白，认为肯福莱特把历史写得鲜活生动，读起来很有趣；另一部分读者读过相关的近现代史，认为肯福莱特以他自己的价值观在写历史，有的地方不够客观公正。这就涉及到历史小说中历史和虚构比重问题，以及作者能否代入过多自己的感情色彩。因为我刚读这类历史小说，我也无法评述，就作为后续读这类小说的一个思考题吧。</p>
 <p>总结一下网上对于三部作品的争议点，以便后续拓展阅读：<br>1、Fall of Giants（《巨人的陨落》）是开山之作，评分也是三部曲中最高的。很多读者都认为它有一种史诗般的恢弘。而对这部作品不满意的读者恰恰是看过《圣殿春秋》后对肯福莱特有较高期望的，他们认为肯福莱特仍在用《圣殿春秋》的模式写这本书，对二十世纪初社会阶层的描写不够准确。在一战的描写中，似乎军官反而不如士兵有勇有谋。关于一战历史，有推荐：巴巴拉.塔奇曼著《八月炮火》。</p>
 <p>2、Winter of the World（《世界的凛冬》）写的是二战历史。有读者认为它的叙事模式借鉴了几十年前赫尔曼.沃克的《战争风云》，尤其是美国的Dewar一家作为总统的亲信，与《战争风云》里亨利上校一样，得以见证很多重要历史时刻。我正好读过《战争风云》，它以美国一个海军武官亨利上校一家为中心展开故事，里面对于军事战略、政治外交等描写较为精确详细。而《世界的凛冬》涉及人物、国家众多，对于罗斯福决策、与盟国协商的历史时刻着墨不多。但是，我觉得《世界的凛冬》的故事更加通俗，肯福莱特描写人物感情还是很细致的。《战争风云》主要人物没有死亡，（不知道它的续集《战争与回忆》里是否会有），我个人认为，这样描写战争的残酷性感染力相对弱了一点。《世界的凛冬》则描写了多次死亡，军人、平民，亲人、朋友，各种情况，让人在心痛中更深地体会到战争的残酷无情、生命的脆弱、当下的可贵。</p>
@@ -174,6 +228,20 @@
         <tag>英文原著</tag>
         <tag>小说</tag>
         <tag>历史</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>写作前的思考：Why&amp;How</title>
+    <url>/2020/04/18/%E5%86%99%E4%BD%9C%E5%89%8D%E7%9A%84%E6%80%9D%E8%80%83%EF%BC%9AWhy&amp;How/</url>
+    <content><![CDATA[<p>经过一番努力，终于在github上建了这个博客小站。趁着现在仍然对写作抱有兴趣和热情，我记录下写作以及建立这个小站的初衷，以后动力不足时可以看一下充电。</p>
+<a id="more"></a>
+<img src="/2020/04/18/%E5%86%99%E4%BD%9C%E5%89%8D%E7%9A%84%E6%80%9D%E8%80%83%EF%BC%9AWhy&How/writing.jpg" class title="Photo by Andrew Neel from Pexels">
+<p>我最近在看fast.ai创始人Jeremy Howard老师的机器学习课程视频，其中他多次推荐博客写作。他认为，写技术博客可以很好地理解和运用知识。其中给我最大的启发就是技术博客的写作角度。在此之前，我一直认为，只有我对某个领域很懂，才可以写一些文章来帮助别人。其实不然。虽然我是新手小白，但是如果我弄懂了一个问题，就可以总结分享出来，帮助以后入门的小白。而且，新手小白反而更能理解新手容易遇到的困惑和问题。另外，这个博客可以作为学习笔记使用，整理知识点，方便自己日后查阅。而当别人遇到同样的问题需要解答时，也可发送博客文章给对方，高效地分享知识。</p>
+<p>平时我喜欢读书、语言学习、听轻音乐等。最近两三年我加大了英文原著阅读量，同时也对英文有声书兴趣正浓。因此，这个博客小站里也有一部分文章是写技术之外的兴趣爱好：书评、英语学习笔记、…。</p>
+<p>坚持写作，思考、表达，不断完善、不断提高。</p>
+]]></content>
+      <tags>
+        <tag>随笔</tag>
       </tags>
   </entry>
   <entry>
@@ -206,6 +274,34 @@
       </tags>
   </entry>
   <entry>
+    <title>率真的科学家费曼</title>
+    <url>/2020/04/22/%E7%8E%87%E7%9C%9F%E7%9A%84%E7%A7%91%E5%AD%A6%E5%AE%B6%E8%B4%B9%E6%9B%BC/</url>
+    <content><![CDATA[<blockquote>
+<p>本文写于2019年7月。</p>
+</blockquote>
+<p>最近听了两本有声书 <strong>“Surely You’re Joking, Mr. Feynman!”</strong> 和 <strong>“What Do You Care What Other People Think?”</strong> ，让我走近并了解了费曼这位科学家。”Surely You’re Joking, Mr. Feynman!”有很多小故事，就像朋友之间的聊天，读过之后知道了很多关于费曼的趣闻轶事。”What Do You Care What Other People Think?”不如前者有名，但我特别推荐一读，里面对于教育、科学、研究等等的讨论和思考，让人很受启发。</p>
+<p><img src="https://img1.doubanio.com/view/subject/l/public/s4259438.jpg" alt="图书封面图片，来源：豆瓣"></p>
+<a id="more"></a>
+<p>生活中的费曼是个率真的人，幽默风趣。他谈论他泡吧、画画、打鼓、开密码锁然后恶作剧等等，让人忍俊不禁。他淡泊名利，对于工资、甚至诺贝尔奖都看得很淡，一开始听到这些故事感到难以置信，随后又领会到这确实是一种科学家的纯粹，做研究只是因为喜欢科学，因为兴趣，而非名利。但费曼并没有通常人们想象中的天才的孤僻，他对于第一任妻子阿琳的不离不弃、一往情深，让人动容。得知多年的恋人阿琳得了重病，他依然和她结了婚，把她安排在工作地附近的医院，工作之余就去看她，陪她走过了生命最后的岁月。</p>
+<p>工作中的费曼对待科学非常严谨认真。他对于教科书审阅的意见，以及在挑战者号失事的调查中，基于事实而不是汇报进行的细致分析、对于最后报告结论的坚持，都让人感受到了他的认真，这也是科研人应该具备的一种态度。</p>
+<p>值得一提的是费曼对于学习和教育的独到见解。他批评填鸭式背诵教育，认为靠记忆知识点，既没学到知识，又费时间，而这些知识点其实可以很容易查找到。他认为学习重点应该放在应用，思考这些知识能如何应用，然后去实践、去试错。他的动手能力很强，从小就开始捣鼓电子元件、收音机等，遇到问题常常想到做各种实验验证或纠正自己的分析。对于这一点，或许我们可以从他父亲的教育方式中得到线索。他回忆小时候父亲带他去郊外观察，第二天其他小伙伴们都能说出看到了某种鸟、甚至这种鸟在各种语言里叫什么名字，而他一问三不知，那他学了什么呢？原来，父亲教他观察鸟儿的行为习性，思考为什么会这样，进而引导他分析得出大自然的规律。多么巧妙的引导式教学！费曼也曾经说过对儿子的期望，他说不会push孩子去成为科学家、教授（这里引用了原词push，当时听到这句话的时候对于never push印象太深了）。实际上，他挺希望孩子去做一些实际的工作，比如工人。但是，他也略带自豪地承认没想到儿子还是子承父业，当了教授。</p>
+<p>在”What Do You Care What Other People Think?”的后记里，费曼讨论了科学的价值这一哲学问题，在谈到科学发展的双刃剑效应时，他引用了佛家的一句话:”To every man is given the key to the gates of heaven; the same key opens the gates of hell.” 同时，他在海边沉思的一段话也写得很优美，有一种物理学家的浪漫，摘录最后的一小节作为结尾：</p>
+<blockquote>
+<p>“Stands at the sea,<br>wonders at wondering: I<br>a universe of atoms,<br>an atom in the universe.”</p>
+</blockquote>
+]]></content>
+      <categories>
+        <category>读书</category>
+      </categories>
+      <tags>
+        <tag>英文原著</tag>
+        <tag>有声书</tag>
+        <tag>非虚构</tag>
+        <tag>科技</tag>
+        <tag>人物传记</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>许多记忆未曾诉说</title>
     <url>/2020/04/22/%E8%AE%B8%E5%A4%9A%E8%AE%B0%E5%BF%86%E6%9C%AA%E6%9B%BE%E8%AF%89%E8%AF%B4/</url>
     <content><![CDATA[<blockquote>
@@ -230,40 +326,13 @@
       </tags>
   </entry>
   <entry>
-    <title>率真的科学家费曼</title>
-    <url>/2020/04/22/%E7%8E%87%E7%9C%9F%E7%9A%84%E7%A7%91%E5%AD%A6%E5%AE%B6%E8%B4%B9%E6%9B%BC/</url>
-    <content><![CDATA[<blockquote>
-<p>本文写于2019年7月。</p>
-</blockquote>
-<p>最近听了两本有声书 <strong>“Surely You’re Joking, Mr. Feynman!”</strong> 和 <strong>“What Do You Care What Other People Think?”</strong> ，让我走近并了解了费曼这位科学家。”Surely You’re Joking, Mr. Feynman!”有很多小故事，就像朋友之间的聊天，读过之后知道了很多关于费曼的趣闻轶事。”What Do You Care What Other People Think?”不如前者有名，但我特别推荐一读，里面对于教育、科学、研究等等的讨论和思考，让人很受启发。</p>
-<a id="more"></a>
-<p><img src="https://img1.doubanio.com/view/subject/l/public/s4259438.jpg" alt="图书封面图片，来源：豆瓣"></p>
-<p>生活中的费曼是个率真的人，幽默风趣。他谈论他泡吧、画画、打鼓、开密码锁然后恶作剧等等，让人忍俊不禁。他淡泊名利，对于工资、甚至诺贝尔奖都看得很淡，一开始听到这些故事感到难以置信，随后又领会到这确实是一种科学家的纯粹，做研究只是因为喜欢科学，因为兴趣，而非名利。但费曼并没有通常人们想象中的天才的孤僻，他对于第一任妻子阿琳的不离不弃、一往情深，让人动容。得知多年的恋人阿琳得了重病，他依然和她结了婚，把她安排在工作地附近的医院，工作之余就去看她，陪她走过了生命最后的岁月。</p>
-<p>工作中的费曼对待科学非常严谨认真。他对于教科书审阅的意见，以及在挑战者号失事的调查中，基于事实而不是汇报进行的细致分析、对于最后报告结论的坚持，都让人感受到了他的认真，这也是科研人应该具备的一种态度。</p>
-<p>值得一提的是费曼对于学习和教育的独到见解。他批评填鸭式背诵教育，认为靠记忆知识点，既没学到知识，又费时间，而这些知识点其实可以很容易查找到。他认为学习重点应该放在应用，思考这些知识能如何应用，然后去实践、去试错。他的动手能力很强，从小就开始捣鼓电子元件、收音机等，遇到问题常常想到做各种实验验证或纠正自己的分析。对于这一点，或许我们可以从他父亲的教育方式中得到线索。他回忆小时候父亲带他去郊外观察，第二天其他小伙伴们都能说出看到了某种鸟、甚至这种鸟在各种语言里叫什么名字，而他一问三不知，那他学了什么呢？原来，父亲教他观察鸟儿的行为习性，思考为什么会这样，进而引导他分析得出大自然的规律。多么巧妙的引导式教学！费曼也曾经说过对儿子的期望，他说不会push孩子去成为科学家、教授（这里引用了原词push，当时听到这句话的时候对于never push印象太深了）。实际上，他挺希望孩子去做一些实际的工作，比如工人。但是，他也略带自豪地承认没想到儿子还是子承父业，当了教授。</p>
-<p>在”What Do You Care What Other People Think?”的后记里，费曼讨论了科学的价值这一哲学问题，在谈到科学发展的双刃剑效应时，他引用了佛家的一句话:*”To every man is given the key to the gates of heaven; the same key opens the gates of hell.”* 同时，他在海边沉思的一段话也写得很优美，有一种物理学家的浪漫，摘录最后的一小节作为结尾：</p>
-<blockquote>
-<p>“<em>Stands at the sea,<br>wonders at wondering: I<br>a universe of atoms,<br>an atom in the universe.</em>“</p>
-</blockquote>
-]]></content>
-      <categories>
-        <category>读书</category>
-      </categories>
-      <tags>
-        <tag>英文原著</tag>
-        <tag>有声书</tag>
-        <tag>非虚构</tag>
-        <tag>科技</tag>
-        <tag>人物传记</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>读乔布斯传</title>
     <url>/2020/04/22/%E8%AF%BB%E4%B9%94%E5%B8%83%E6%96%AF%E4%BC%A0/</url>
     <content><![CDATA[<blockquote>
 <p>本文写于2019年8月。</p>
 </blockquote>
-<p>最近读了Walter Isaacson 为乔布斯写的传记 <strong>Steve Jobs</strong>，书中关于乔布斯的创新和产品理念让我反复思索、很受启发。这是一本值得再读一遍的好书。谈谈书中让我感悟最深的几点：(由于早段时间读了马斯克的传记，我认为马斯克和乔布斯在一些方面有相似之处，因此有些地方也对马斯克进行了介绍。）</p>
+<p>最近读了Walter Isaacson 为乔布斯写的传记 <strong>Steve Jobs</strong>，书中关于乔布斯的创新和产品理念让我反复思索、很受启发。这是一本值得再读一遍的好书。我想谈谈书中让我感悟最深的几点：(由于早段时间读了马斯克的传记，我认为马斯克和乔布斯在一些方面有相似之处，因此有些地方也对马斯克进行了介绍。）</p>
+<a id="more"></a>
 <h4 id="1-创新"><a href="#1-创新" class="headerlink" title="1. 创新"></a>1. 创新</h4><p>公司创新的原动力在哪里？乔布斯认为这一动力来自研发设计人员、产品工程师，因此他坚持产品研发人员优先的原则。他曾经在访谈中提到一些大企业后来衰退的原因，就是销售人员取代产品研发人员在公司占据主导地位。当公司的主要精力不是放在产品上而只是为了迎合市场提高销量时，公司就失去了创新的动力。他有一个著名的论断：顾客其实不知道自己想要什么样的产品，因此不对现有市场进行调研，而是主动去发现潜在的需求和可能的市场，提供相应的产品。顾客只是没有见过这种新产品，新品一旦推出，会受欢迎。事实如此。在这一点上，马斯克和乔布斯有相似之处，他们都善于发现现有市场的短板或空白，然后由此发力，获得成功。比如乔布斯带领苹果走入音乐产业、手机产业…，马斯克发现银行在网上业务的空缺而开创网络支付。</p>
 <h4 id="2-热情与信念"><a href="#2-热情与信念" class="headerlink" title="2. 热情与信念"></a>2. 热情与信念</h4><p>这里就要提到乔布斯的“现实扭曲”(reality distortion)，即坚信他认定的事，不考虑由现实环境得出的相反结论。比如，他认为某件事可以办到，他也让本来持怀疑态度的其他人相信可以做到，然后尽全力去做，最后出人意料地真的实现了。这让我想到了马斯克的员工对于马斯克提出的工作任务不能直接回答impossible（不可能），只能是提出有什么困难障碍，马斯克想办法解决，这也让他的员工的潜能得到最大发挥。乔布斯和马斯克都是对于工作和梦想充满热情的人，他们全身心地投入其中，主观积极性发挥到极致，这种态度直接影响了他们周围的人，最终完成了许多本来预计不可能实现的工作。</p>
 <h4 id="3-禅宗对于乔布斯的影响"><a href="#3-禅宗对于乔布斯的影响" class="headerlink" title="3. 禅宗对于乔布斯的影响"></a>3. 禅宗对于乔布斯的影响</h4><p>受禅宗影响，乔布斯非常推崇<strong>简约</strong>。”Simplicity is the ultimate sophistication.”他在产品中要求工程师们做到这一点，产品简洁、易用。同时，他在自己的人生中也实践了这一点。他从十几岁起就成了一个虔诚的素食主义者，即便家财万贯，也没有去追求物质的享受。他关注的，就是如何把他视同孩子的苹果公司做到长久。</p>
@@ -319,7 +388,7 @@
 <h3 id="5G-来了"><a href="#5G-来了" class="headerlink" title="5G 来了"></a>5G 来了</h3><p>刚刚过去的 2019 年是 5G 商用元年。19 年 6 月，5G 牌照发放。11 月，5G 商用套餐正式上线。”5G” 也成为年度热词、大家谈论的焦点。许多人可能会有疑问：5G 除了比 4G 网速快了，还有哪些不同之处？5G 来了，它能给社会和生活带来哪些变化和便利？带着同样的问题，我打开了这本最新出版的 <strong>《 5G 时代：经济增长新引擎》</strong>，听北京邮电大学孙松林教授讲述 5G 的发展之路，展望即将开启的 5G 时代。</p>
 <a id="more"></a>
 
-<p><img src="https://img1.doubanio.com/view/subject/l/public/s33537277.jpg=200X350" alt="图书封面图片，来源：豆瓣"></p>
+<p><img src="https://img1.doubanio.com/view/subject/l/public/s33537277.jpg" alt="图书封面图片，来源：豆瓣"></p>
 <h3 id="5G-带来的变革"><a href="#5G-带来的变革" class="headerlink" title="5G 带来的变革"></a>5G 带来的变革</h3><p>读完这本书，我印象最深的就是 5G 带来的<strong>理念变革</strong>：</p>
 <ul>
 <li>由面向人的通信方式转变为面向物的通信方式，打造万物互联的社会。</li>
@@ -353,69 +422,6 @@
       <tags>
         <tag>非虚构</tag>
         <tag>科技</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>Python编程之API入门：一 使用百度地图API查地理坐标</title>
-    <url>/2020/04/18/Python%E7%BC%96%E7%A8%8B%E4%B9%8BAPI%E5%85%A5%E9%97%A8%EF%BC%9A%E4%B8%80-%E4%BD%BF%E7%94%A8%E7%99%BE%E5%BA%A6%E5%9C%B0%E5%9B%BEAPI%E6%9F%A5%E5%9C%B0%E7%90%86%E5%9D%90%E6%A0%87/</url>
-    <content><![CDATA[<p>在网络编程中，我们会和API打交道。那么，什么是API?如何使用API呢？本文分享了一下笔者对API的理解以及百度地图API的使用。</p>
-<a id="more"></a>
-<p>API是”Application Programming Interface（应用程序编程接口）”的缩写。如果那一大堆的术语和定义让你头晕，不妨试着这样理解：网络服务商（比如百度、微博等）存有大量数据，我们可以查询数据，但是需要按照一定的格式/协议，否则服务商不知道我们的需求无法进行处理，我们拿到数据也看不懂。通过API接口规范，通信双方都能明白对方传送的信息和数据，同时也简化了操作（只要按照规定的格式输入，就可以得到已知格式的输出，我们无需了解具体实现的技术细节，是不是很省心呢？）</p>
-<p>下面以<a href="http://lbsyun.baidu.com/index.php?title=webapi" target="_blank" rel="noopener">百度地图Web服务API</a>的调用为例。</p>
-<img src="/2020/04/18/Python%E7%BC%96%E7%A8%8B%E4%B9%8BAPI%E5%85%A5%E9%97%A8%EF%BC%9A%E4%B8%80-%E4%BD%BF%E7%94%A8%E7%99%BE%E5%BA%A6%E5%9C%B0%E5%9B%BEAPI%E6%9F%A5%E5%9C%B0%E7%90%86%E5%9D%90%E6%A0%87/02%E7%99%BE%E5%BA%A6%E5%9C%B0%E5%9B%BEAPI%E5%B9%B3%E5%8F%B0.png" class title="百度地图API平台示意图"> 
-
-<p>要使用的是图中所示“正/逆地理编码服务”。在使用服务前，需要登录百度账号（如果没有就注册一个），申请成为百度开发者，然后创建一个你自己的应用，就可以收到一个对应的服务密钥(AK)。在服务配置页面，有两种校验方式，一种是IP白名单方式，一种是sn校验方式。我根据文章<a href="https://www.cnblogs.com/liao-sir/p/8367683.html" target="_blank" rel="noopener"><br>python实现百度地图API获取某地址的经纬度</a>中的介绍，选择了sn校验方式，这样页面上会有SK。请将AK和SK两个序列码保存好，这就是你个人的验证信息。下一步使用百度地图API时要用到。</p>
-<p>要编写的这个Python小程序实现的功能是：<strong>输入某个地址，得到相应的经纬度坐标信息</strong>。分三步实现：</p>
-<ol>
-<li>生成url（用于提交到API进行查询）</li>
-<li>与API交互，查询并返回数据（json格式） </li>
-<li>利用json解析并输出。</li>
-</ol>
-<p>下面分别介绍具体实现。</p>
-<h3 id="1-sn码及url的生成"><a href="#1-sn码及url的生成" class="headerlink" title="1. sn码及url的生成"></a>1. sn码及url的生成</h3><p>url= <a href="http://api.map.baidu.com/geocoder/v2/?address=“输入的地点名”&amp;output=json&amp;ak=&#39;你的AK码&#39;&amp;sn=&#39;你的sn码&#39;。" target="_blank" rel="noopener">http://api.map.baidu.com/geocoder/v2/?address=“输入的地点名”&amp;output=json&amp;ak=&#39;你的AK码&#39;&amp;sn=&#39;你的sn码&#39;。</a><br>需要注意的是：</p>
-<ul>
-<li>由于url中有中文字符串，需要使用函数<code>urllib.parse.quote(inputstr, safe=&quot;/:=&amp;?#+!$,;&#39;@()*[]&quot;)</code>转换一下编码。</li>
-<li>在url里output可以选择输出为json格式或xml格式，默认是xml格式。</li>
-</ul>
-<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">import</span> urllib.request,urllib.parse,urllib.error</span><br><span class="line"><span class="keyword">import</span> json</span><br><span class="line"><span class="keyword">import</span> hashlib</span><br><span class="line"></span><br><span class="line">MyAK=<span class="string">'这里请填入你的AK'</span></span><br><span class="line">MySK=<span class="string">'这里请填入你的SK'</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">while</span> <span class="literal">True</span>:</span><br><span class="line">    address = input(<span class="string">'输入地点：'</span>)</span><br><span class="line">    <span class="keyword">if</span> len(address)&lt;<span class="number">1</span>:</span><br><span class="line">        <span class="keyword">break</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">#产生sn码</span></span><br><span class="line">    queryStr=<span class="string">"/geocoder/v2/?address="</span>+address+<span class="string">'&amp;output=json&amp;ak='</span>+MyAK</span><br><span class="line">    encodedStr=urllib.parse.quote(queryStr, safe=<span class="string">"/:=&amp;?#+!$,;'@()*[]"</span>)</span><br><span class="line">    rawStr=encodedStr+MySK</span><br><span class="line">    sn=(hashlib.md5(urllib.parse.quote_plus(rawStr).encode(<span class="string">"utf8"</span>)).hexdigest())</span><br><span class="line"></span><br><span class="line">    <span class="comment">#生成url  </span></span><br><span class="line">    url=urllib.parse.quote(<span class="string">"http://api.map.baidu.com"</span>+queryStr+<span class="string">"&amp;sn="</span>+sn,safe=<span class="string">"/:=&amp;?#+!$,;'@()*[]"</span>)</span><br><span class="line">    print(<span class="string">'Retrieving'</span>,url)</span><br></pre></td></tr></table></figure>
-
-<h3 id="2-输入url，利用urllib从API读取数据"><a href="#2-输入url，利用urllib从API读取数据" class="headerlink" title="2. 输入url，利用urllib从API读取数据"></a>2. 输入url，利用urllib从API读取数据</h3><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment">#从API读取数据</span></span><br><span class="line">uh=urllib.request.urlopen(url)</span><br><span class="line">data=uh.read().decode()</span><br><span class="line">print(<span class="string">'Retrieved'</span>,len(data),<span class="string">'characters'</span>)</span><br></pre></td></tr></table></figure>
-<h3 id="3-利用json对返回数据进行解析。"><a href="#3-利用json对返回数据进行解析。" class="headerlink" title="3. 利用json对返回数据进行解析。"></a>3. 利用json对返回数据进行解析。</h3><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment">#解析数据</span></span><br><span class="line">    <span class="keyword">try</span>:</span><br><span class="line">        js=json.loads(data)</span><br><span class="line">    <span class="keyword">except</span>:</span><br><span class="line">        js=<span class="literal">None</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> <span class="keyword">not</span> js <span class="keyword">or</span> <span class="string">'status'</span><span class="keyword">not</span> <span class="keyword">in</span> js <span class="keyword">or</span> js[<span class="string">'status'</span>]!=<span class="number">0</span>:</span><br><span class="line">        print(<span class="string">'======Failure===='</span>)</span><br><span class="line">        print(data)</span><br><span class="line">        <span class="keyword">continue</span></span><br><span class="line">    print(json.dumps(js,indent=<span class="number">4</span>,ensure_ascii=<span class="literal">False</span>))</span><br></pre></td></tr></table></figure>
-<p>以上代码可输出得到json格式的数据。例如，输入“百度大厦”后，程序输出的json格式数据如下所示：</p>
-<figure class="highlight json"><table><tr><td class="code"><pre><span class="line">&#123;</span><br><span class="line">    <span class="attr">"status"</span>: <span class="number">0</span>,</span><br><span class="line">    <span class="attr">"result"</span>: &#123;</span><br><span class="line">        <span class="attr">"location"</span>: &#123;</span><br><span class="line">            <span class="attr">"lng"</span>: <span class="number">116.30695597357376</span>,</span><br><span class="line">            <span class="attr">"lat"</span>: <span class="number">40.05738753357608</span></span><br><span class="line">        &#125;,</span><br><span class="line">        <span class="attr">"precise"</span>: <span class="number">1</span>,</span><br><span class="line">        <span class="attr">"confidence"</span>: <span class="number">80</span>,</span><br><span class="line">        <span class="attr">"comprehension"</span>: <span class="number">100</span>,</span><br><span class="line">        <span class="attr">"level"</span>: <span class="string">"商务大厦"</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>需要注意的是，在这里一开始中文字符<code>&quot;商务大厦&quot;</code>不能正确显示，我从文章<a href="https://www.cnblogs.com/mingjiatang/p/9527345.html" target="_blank" rel="noopener">python中文编码&amp;json中文输出问题</a>中找到了答案，在<code>json.dumps()</code>函数中，默认转换为 ASCII 编码，中文字符就无法转换显示，因此在<code>json.dumps()</code>中要设置<code>ensure_ascii=False</code>。</p>
-<p>最后，通过以下代码，可提取经纬度坐标等信息。</p>
-<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment">#获取经纬度坐标和地址类型</span></span><br><span class="line">lat=js[<span class="string">"result"</span>][<span class="string">"location"</span>][<span class="string">"lat"</span>]</span><br><span class="line">lng=js[<span class="string">"result"</span>][<span class="string">"location"</span>][<span class="string">"lng"</span>]</span><br><span class="line">print(<span class="string">'纬度'</span>,lat,<span class="string">'经度'</span>,lng)</span><br><span class="line">level=js[<span class="string">"result"</span>][<span class="string">"level"</span>]</span><br><span class="line">print(<span class="string">'地址类型'</span>,level)</span><br></pre></td></tr></table></figure>
-<p>总结：按照规范发送 url 以及对返回 json 或 xml 格式数据正确解析，另外注意中文字符的编码问题，就可以上手API。怎么样？你也快来试试吧！</p>
-]]></content>
-      <categories>
-        <category>编程</category>
-      </categories>
-      <tags>
-        <tag>Python</tag>
-        <tag>API</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>不一样的马斯克</title>
-    <url>/2020/04/22/%E4%B8%8D%E4%B8%80%E6%A0%B7%E7%9A%84%E9%A9%AC%E6%96%AF%E5%85%8B/</url>
-    <content><![CDATA[<blockquote>
-<p>本文写于2019年6月。</p>
-</blockquote>
-<p>读 <strong>Elon Musk:Tesla, SpaceX, and the Quest for a Fantastic Future</strong> 这本传记之前，我听到的都是关于马斯克的传说，特斯拉、猎鹰系列火箭…能够同时涉足如此多的领域、管理几家公司，我想马斯克应该是个天才。</p>
-<p><img src="https://img9.doubanio.com/view/subject/l/public/s28351575.jpg" alt="图书封面图片，来源：豆瓣"><br>这本书改变了我的想法。读的过程中，我的脑子里时常冒出那段著名的“天将降大任于斯人也，必先苦其心志、劳其筋骨、…”。没有谁的成功是轻而易举的。世人看到的都是表面的风光，少有人看到他爬到山顶的途中遇到的坎坷、留下的汗水和泪水。然而，这也正是马斯克最打动我的，他的字典里没有“不”、“不可能”这样的字眼，他会分析如何去实现、有什么困难或问题，然后一一解决。他的所作所为或许有些疯狂，但这也是他超越现在之处，因为他着眼于未来。Google创始人Larry Page说， *”Good ideas are always crazy until they’re not.”* X.com（后来合并了，成为了现在的Paypal）的出现改变了人们的支付方式和习惯； Tesla（特斯拉）之后，新能源电动车如雨后春笋般出现，改变了人们对于汽车的认识和选择；或许SpaceX（太空探索技术公司）的火箭也会在若干年后改变我们的生活，火星、外太空将不再那么遥远…</p>
-<p>书中让我印象深刻的另一点，就是马斯克巧妙地将硅谷精简高效的工作方式引入到传统工业中（航天、汽车），产生了新的变革。比如设计研发人员的办公地点就”点缀”在工厂车间之中，让修改、测试十分快捷。从一个行业跨越到一个新的行业，专业知识不太精通可能是一个短板，但是同时也避免了固守陈规，比如马斯克就用了很多新的理念来设计和生产，这都是传统行业的从业者不想做或是不敢做的，但是马斯克的大胆创新和尝试取得了成效，也让他的跨领域成为优势。举个例子，坐车时我们可能会遇到一些不合适的地方，比如后排空间狭小等。很多人会说，以前就是这样设计，一直这样，没办法…马斯克不这么看，为什么不能改变？他和设计人员一起讨论想办法，特斯拉的SUV就采用了鹰翼式设计，方便家长安放儿童座椅。我到网上看了图片，确实很人性化。这也给我们启示，如何更好地进行跨领域、跨学科融合？</p>
-<p>让我格外高兴的一点就是马斯克也很喜欢读书，小时候就是个小书迷，到后面连百科全书都拿来啃。成立Space X他也读了很多专业书籍，但他还找到了一个快速学习的方法：向员工提专业问题。他招的都是高材生，他们一开始以为老板要检验一下自己的真才实学，于是滔滔不绝地详细讲解一通，后来发现，原来马斯克正在快速吸收知识呢! 终身学习、不断探知新的领域，这也是我们应该努力做到的。</p>
-<p>这本书让我认识了一个不一样的马斯克，也带给我很多关于创新、热情、乐观的思考，值得一读。</p>
-]]></content>
-      <categories>
-        <category>读书</category>
-      </categories>
-      <tags>
-        <tag>英文原著</tag>
-        <tag>非虚构</tag>
-        <tag>科技</tag>
-        <tag>人物传记</tag>
       </tags>
   </entry>
 </search>
